@@ -7,43 +7,39 @@ package server;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import com.sun.net.httpserver.Headers;
+
 
 //class for parsing HTTP requests on our server
 public class RequestParser{
-	public String request;
-	protected HashMap<String, String> mapped_request;
+	public Headers request;
+	protected HashMap<String, List<String>> mapped_request;
 
-	public RequestParser(String r){
-		request = r;
-		mapped_request = new HashMap<String, String>();
+	public RequestParser(Headers h){
+		request = h;
+		mapped_request = new HashMap<String, List<String>>();
 	}
 
+	//parses the header into a map
 	public void parse() throws IOException{
-		//splitting the request into various lines and reading line by line
-		String[] split = request.split(System.getProperty("line.separator"));
-
-		for(String line : split){
-			//checking that the line is not empty
-			if(line.length() == 0)
-				continue;
-			
-			String[] split_line = line.split("[=]");
-			String key = URLDecoder.decode(split_line[0], System.getProperty("file.encoding"));
-			String value = URLDecoder.decode(split_line[1], System.getProperty("file.encoding"));
+		for(String key : request.keySet()){
+			List<String> value = request.get(key);
 			mapped_request.put(key, value);
+
 		}
 	}
 
-	//creates a response to send to the client based on the request
+	//creates a response to send to the client based on the request that was parsed into a map
 	public String createResponse(){
 		String response = "";
 
-		for(Map.Entry<String, String> entry : mapped_request.entrySet()){
+		for(Map.Entry<String, List<String>> entry : mapped_request.entrySet()){
 			String key = entry.getKey();
-			String value = entry.getValue();
+			List<String> value = entry.getValue();
 			response += key;
 			response += " = ";
-			response += value;
+			for(String val : value)
+				response += value + " ";
 			response += "\n";
 		}
 

@@ -49,10 +49,7 @@ public class WebServer {
 		@Override
 			public void handle(HttpExchange ex) throws IOException{
 				//parse GET request
-				URI uri = ex.getRequestURI();
-				String request = uri.getRawQuery();
-				System.out.println(request);
-				RequestParser r = new RequestParser(request);
+				RequestParser r = new RequestParser(ex.getRequestHeaders());
 				r.parse();
 
 
