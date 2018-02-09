@@ -52,11 +52,33 @@ public class WebServer {
 				RequestParser r = new RequestParser(ex.getRequestHeaders());
 				r.parse();
 
+				//send GET response
+				String response = r.createResponse();
+				ex.getResponseHeaders().add("Content-type", "text/html");
+				ex.sendResponseHeaders(200, 0);
+				OutputStream out = ex.getResponseBody();
+				response = "<html><h1>You did a GET Request! Good Job!</h1></html>";
+				out.write(response.getBytes());
+				out.close();
+			}
+	}
+
+	//handler to handle File transfer
+	protected static class FileTransfer implements HttpHandler{
+		@Override
+			public void handle(HttpExchange ex) throws IOException{
+				//parse GET request
+				RequestParser r = new RequestParser(ex.getRequestHeaders());
+				r.parse();
 
 				//send GET response
 				String response = r.createResponse();
-				ex.sendResponseHeaders(200, response.length());
+				ex.getResponseHeaders().add("Content-type", "text/plain");
+				ex.sendResponseHeaders(200, 0);
+
+				//read some file and print it
 				OutputStream out = ex.getResponseBody();
+
 				out.write(response.getBytes());
 				out.close();
 			}
@@ -71,6 +93,7 @@ public class WebServer {
 			//adding handlers to handle various aspects of the server
 			server.createContext("/", new BasicHandler());
 			server.createContext("/get", new GetHandler());
+			server.createContext("/file", new FileTransfer());
 			
 			server.setExecutor(null);
 			server.start();
