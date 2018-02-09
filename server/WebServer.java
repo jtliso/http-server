@@ -1,9 +1,14 @@
+//J.T. Liso and Sean Whalen
+//COSC 560, Spring 2018
+//February 28, 2018
+
 package server;
 
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
+import java.net.*;
 
 public class WebServer {
 	public int portNum;
@@ -29,13 +34,35 @@ public class WebServer {
 	protected static class BasicHandler implements HttpHandler{
 		@Override
 			public void handle(HttpExchange ex) throws IOException{
-				String msg = "<h1>Hello world!</h1>";
+				String msg = "<h1>Go Vols!</h1>";
+				msg += "<img src=\"http://i0.kym-cdn.com/photos/images/newsfeed/001/207/210/b22.jpg\">";
 				ex.sendResponseHeaders(200, msg.length());
 				OutputStream out = ex.getResponseBody();
 				out.write(msg.getBytes());
 				out.close();
 			}
 
+	}
+
+	//handler to handle GET requests
+	protected static class GetHandler implements HttpHandler{
+		@Override
+			public void handle(HttpExchange ex) throws IOException{
+				//parse GET request
+				URI uri = ex.getRequestURI();
+				String request = uri.getRawQuery();
+				System.out.println(request);
+				RequestParser r = new RequestParser(request);
+				r.parse();
+
+
+				//send GET response
+				String response = r.createResponse();
+				ex.sendResponseHeaders(200, response.length());
+				OutputStream out = ex.getResponseBody();
+				out.write(response.getBytes());
+				out.close();
+			}
 	}
 
 
@@ -46,7 +73,9 @@ public class WebServer {
 
 			//adding handlers to handle various aspects of the server
 			server.createContext("/", new BasicHandler());
-
+			server.createContext("/get", new GetHandler());
+			
+			server.setExecutor(null);
 			server.start();
 
 		}catch(IOException e){
