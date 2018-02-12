@@ -19,7 +19,7 @@ public class WebServer {
 	public WebServer(String[] args){
 		portNum = Integer.parseInt(args[0]);
 
-		//checkign if we are multithreaded mode or not
+		//checking if we are multithreaded mode or not
 		if(args[1].equals("-s"))
 			threaded = false;
 		else if(args[1].equals("-m"))
@@ -95,7 +95,12 @@ public class WebServer {
 			server.createContext("/get", new GetHandler());
 			server.createContext("/file", new FileTransfer());
 			
-			server.setExecutor(null);
+			//threading the server if specified
+			if(!threaded)
+				server.setExecutor(null);
+			else
+				server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
+
 			server.start();
 
 		}catch(IOException e){
@@ -106,7 +111,7 @@ public class WebServer {
 
 	public static void main(String[] args){
 		if(args.length < 2){
-			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threded)");
+			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threaded)]");
 			return;
 		}
 
