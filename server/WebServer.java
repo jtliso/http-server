@@ -9,6 +9,7 @@ import java.util.*;
 import java.io.*;
 import com.sun.net.httpserver.*;
 import java.net.*;
+import java.nio.file.Files;
 
 public class WebServer {
 	public int portNum;
@@ -74,12 +75,13 @@ public class WebServer {
 				//send GET response
 				String response = r.createResponse();
 				ex.getResponseHeaders().add("Content-type", "text/plain");
-				ex.sendResponseHeaders(200, 0);
 
 				//read some file and print it
 				OutputStream out = ex.getResponseBody();
 
-				out.write(response.getBytes());
+				File file = new File("got.txt");
+				ex.sendResponseHeaders(200, file.length());
+				Files.copy(file.toPath(), out);
 				out.close();
 			}
 	}
