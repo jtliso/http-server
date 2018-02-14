@@ -86,6 +86,47 @@ public class WebServer {
 			}
 	}
 
+	//recursive call to list all files and subfiles in directory
+	//printed as unordered list in HTML
+	protected static void listFiles(File dir, OutputStream out) throws IOException{
+		String fileList;
+
+		for(File f : dir.listFiles()){
+			if(f.isHidden()) //skipping hidden files
+				continue;
+			if(f.isDirectory()) //recursively exploring directory if needed
+				listFiles(f, out);
+			else if(f.isFile())
+				out.write(("<li>"+f.getAbsolutePath()+"</li>").getBytes());
+		}
+	}
+
+	//handler for directory listing
+	//lists files in current directory
+	protected static class DirectoryHandler implements HttpHandler{
+		@Override
+		public void handle(HttpExchange ex) throws IOException{
+				//parse GET request
+				RequestParser r = new RequestParser(ex.getRequestHeaders());
+				r.parse();
+			
+				//send GET response
+				String response = r.createResponse();
+				ex.getResponseHeaders().add("Content-type", "text/html");
+				ex.sendResponseHeaders(200, 0);
+				
+				//sending header
+				OutputStream out = ex.getResponseBody();
+				response = "<html><h1>Directory listing!</h1><ul>";
+				out.write(response.getBytes());
+
+				File curDir = new File(".");
+				listFiles(curDir, out);
+				out.write("</ul></html>".getBytes());
+				out.close();
+		}
+	}
+
 
 	public void run() throws IOException{
 		try{
@@ -96,6 +137,7 @@ public class WebServer {
 			server.createContext("/", new BasicHandler());
 			server.createContext("/get", new GetHandler());
 			server.createContext("/file", new FileTransfer());
+			server.createContext("/dir", new DirectoryHandler());
 			
 			//threading the server if specified
 			if(!threaded)
