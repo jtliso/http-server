@@ -123,8 +123,11 @@ public class WebServer {
 				continue;
 			if(f.isDirectory()) //recursively exploring directory if needed
 				listFiles(f, out, currDir);
-			else if(f.isFile())
-				out.write(("<li>"+f.getAbsolutePath().replace(currDir+"/", "")+"</li>").getBytes());
+			else if(f.isFile()){
+				String fname = f.getAbsolutePath().replace(currDir+"/", "");
+				out.write(("<li><a href=\"file?file="
+					+fname+"\">"+fname+"</a></li>").getBytes());
+			}
 		}
 	}
 
@@ -154,6 +157,25 @@ public class WebServer {
 		}
 	}
 
+	//handler to run CGI script
+	protected static class CGIHandler implements HttpHandler{
+		@Override
+		public void handle(HttpExchange ex) throws IOException{
+			//parse GET request
+			RequestParser r = new RequestParser(ex.getRequestHeaders());
+			r.parse();
+
+			//send GET response
+			String response = r.createResponse();
+			OutputStream out = ex.getResponseBody();
+			ex.getResponseHeaders().add("Content-type", "text/html");
+			ex.sendResponseHeaders(200, 0);
+			String cgi = "<html><a href=\"cgi-bin/test.pl\"> Click here to run a CGI program</A></html>";
+			out.write(cgi.getBytes());
+			out.close();
+		}
+	}
+
 
 	public void run() throws IOException{
 		try{
@@ -165,6 +187,7 @@ public class WebServer {
 			server.createContext("/get", new GetHandler());
 			server.createContext("/file", new FileTransfer());
 			server.createContext("/dir", new DirectoryHandler());
+			server.createContext("/cgi", new CGIHandler());
 			
 			//threading the server if specified
 			if(!threaded)
