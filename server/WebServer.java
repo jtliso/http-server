@@ -78,26 +78,53 @@ public class WebServer {
 
 				//read some file and print it
 				OutputStream out = ex.getResponseBody();
+				String query = ex.getRequestURI().getQuery();
 
-				File file = new File("got.txt");
-				ex.sendResponseHeaders(200, file.length());
-				Files.copy(file.toPath(), out);
-				out.close();
+				//checking that query was provided
+				if(query == null){
+					ex.sendResponseHeaders(200, 0);
+					out.write("Error, you need to provide a file name in the url\nUSAGE host/file?file=...".getBytes());
+					out.close();
+				}else{
+
+					String[] split = ex.getRequestURI().getQuery().split("=");
+					
+					//checking that the correct parameter was passed
+					if(!split[0].equals("file")){
+						ex.sendResponseHeaders(200, 0);
+						out.write("Error, file parameter must be called file\nUSAGE host/file?file=...".getBytes());
+						out.close();
+					}else{
+						String param = split[1];
+
+						//check if file can be opened and read
+						File file = new File(param);
+						if(file.isFile() && file.canRead()){
+							ex.sendResponseHeaders(200, file.length());
+							Files.copy(file.toPath(), out);
+							out.close();
+						}else{
+							ex.sendResponseHeaders(200, 0);
+							out.write("Error reading file. Please try again and make sure path is correct".getBytes());
+							out.close();
+						}
+					}
+				}
 			}
-	}
+		}
 
 	//recursive call to list all files and subfiles in directory
 	//printed as unordered list in HTML
-	protected static void listFiles(File dir, OutputStream out) throws IOException{
+	protected static void listFiles(File dir, OutputStream out, String currDir) throws IOException{
 		String fileList;
 
 		for(File f : dir.listFiles()){
 			if(f.isHidden()) //skipping hidden files
 				continue;
 			if(f.isDirectory()) //recursively exploring directory if needed
-				listFiles(f, out);
+				listFiles(f, out, currDir);
 			else if(f.isFile())
-				out.write(("<li>"+f.getAbsolutePath()+"</li>").getBytes());
+				out.write(("<li>"+f.getAbsolutePath().replace(currDir+"/", "")+"</li>").getBytes());
 		}
 	}
 
@@ -121,7 +148,7 @@ public class WebServer {
 				out.write(response.getBytes());
 
 				File curDir = new File(".");
-				listFiles(curDir, out);
+				listFiles(curDir, out, curDir.getAbsolutePath());
 				out.write("</ul></html>".getBytes());
 				out.close();
 		}
