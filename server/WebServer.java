@@ -170,9 +170,56 @@ public class WebServer {
 			OutputStream out = ex.getResponseBody();
 			ex.getResponseHeaders().add("Content-type", "text/html");
 			ex.sendResponseHeaders(200, 0);
-			String cgi = "<html><a href=\"cgi-bin/test.pl\"> Click here to run a CGI program</A></html>";
-			out.write(cgi.getBytes());
-			out.close();
+			
+			//String cgi = "<FORM METHOD=\"GET\""
+			//      +"ACTION=\"cgi-bin/cgi_script.cgi\">"
+			//	  +"<b> Enter argument: </b>" 
+			//	  +"<INPUT size=40 name=q VALUE=\"\">"
+			//	  +"<INPUT TYPE=\"submit\" VALUE=\"Submit\">"
+			//	  +"<INPUT TYPE=\"reset\" VALUE=\"Reset\">"
+			//	  +"</FORM>";
+			//String cgi = "<html><a href=\"cgi-bin/test.pl\"> Click here to run a CGI program</A></html>";
+			
+			//out.write(cgi.getBytes());
+			//out.close();
+		}
+	}
+
+	//handler to handle POST requets
+	//asks for favorite band
+	protected static class PostHandler implements HttpHandler{
+		@Override
+		public void handle(HttpExchange ex) throws IOException{
+				//parse POST request
+				RequestParser r = new RequestParser(ex.getRequestHeaders());
+				r.parse();
+				String query = ex.getRequestURI().getQuery();
+				String form = "";
+
+				//checking that the query is not null
+				if(query != null){
+					String[] params = query.split("&");
+
+					String name = params[0].split("=")[1].replace("+", " ");
+					String band = params[1].split("=")[1].replace("+", " ");
+
+					BufferedWriter writer = new BufferedWriter(new FileWriter("post_output.txt"));
+					String msg = name + "'s favorite band is " + band;
+					form += msg;
+					writer.write(msg);
+					writer.close();
+				}
+
+				form += "<form>First name:<br><input type=\"text\" name=\"firstname\"><br> Favorite Band:<br><input type=\"text\" name=\"bandname\"><br><br><input type=\"submit\" value=\"Submit\"></form>";
+				
+				ex.getResponseHeaders().add("Content-type", "text/html");
+				ex.sendResponseHeaders(200, 0);
+
+				
+				//sending header
+				OutputStream out = ex.getResponseBody();
+				out.write(form.getBytes());
+				out.close();
 		}
 	}
 
@@ -188,6 +235,7 @@ public class WebServer {
 			server.createContext("/file", new FileTransfer());
 			server.createContext("/dir", new DirectoryHandler());
 			server.createContext("/cgi", new CGIHandler());
+			server.createContext("/post", new PostHandler());
 			
 			//threading the server if specified
 			if(!threaded)
