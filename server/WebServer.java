@@ -193,8 +193,11 @@ public class WebServer {
 				//parse POST request
 				RequestParser r = new RequestParser(ex.getRequestHeaders());
 				r.parse();
-				String query = ex.getRequestURI().getQuery();
 				String form = "";
+
+				InputStreamReader in = new InputStreamReader(ex.getRequestBody(), "utf-8");
+				BufferedReader buf = new BufferedReader(in);
+				String query = buf.readLine();
 
 				//checking that the query is not null
 				if(query != null){
@@ -210,7 +213,7 @@ public class WebServer {
 					writer.close();
 				}
 
-				form += "<form>First name:<br><input type=\"text\" name=\"firstname\"><br> Favorite Band:<br><input type=\"text\" name=\"bandname\"><br><br><input type=\"submit\" value=\"Submit\"></form>";
+				form += "<form method=\"post\">First name:<br><input type=\"text\" name=\"firstname\"><br> Favorite Band:<br><input type=\"text\" name=\"bandname\"><br><br><input type=\"submit\" value=\"Submit\"></form>";
 				
 				ex.getResponseHeaders().add("Content-type", "text/html");
 				ex.sendResponseHeaders(200, 0);
