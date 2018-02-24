@@ -158,12 +158,41 @@ public class WebServer {
 	}
 
 	//handler to run CGI script
+	//executed whenever user navigates to /cgi
 	protected static class CGIHandler implements HttpHandler{
 		@Override
 		public void handle(HttpExchange ex) throws IOException{
+			String param = "";
+			String cgiResp; //holds cgi resp. or error msg. 
+			
 			//parse GET request
 			RequestParser r = new RequestParser(ex.getRequestHeaders());
 			r.parse();
+			
+			//TO-DO HERE: 
+			// 1) add parsing for running any script in cgi-bin, not just test.php
+			// 2) parse arguments and pass to cgi script in param var.
+			// 3) add functionality for .py, .pl, not just .php
+				
+			//run hard-coded dummy cgi script, put resp. in cgiResp
+			try {
+				String line; 
+				StringBuilder output = new StringBuilder();
+				Process p = Runtime.getRuntime().exec("php " + "cgi-bin/test.php" + " " + param); //3
+				BufferedReader input = 
+					new BufferedReader (
+						new InputStreamReader(p.getInputStream()));
+				
+				while ((line = input.readLine()) != null) {
+					output.append(line);
+				}
+				input.close();
+				cgiResp = output.toString();
+				
+			}
+			catch (Exception err) {
+				cgiResp = "<p>" + err.toString() + "</p>";
+			}
 
 			//send GET response
 			String response = r.createResponse();
@@ -171,17 +200,9 @@ public class WebServer {
 			ex.getResponseHeaders().add("Content-type", "text/html");
 			ex.sendResponseHeaders(200, 0);
 			
-			//String cgi = "<FORM METHOD=\"GET\""
-			//      +"ACTION=\"cgi-bin/cgi_script.cgi\">"
-			//	  +"<b> Enter argument: </b>" 
-			//	  +"<INPUT size=40 name=q VALUE=\"\">"
-			//	  +"<INPUT TYPE=\"submit\" VALUE=\"Submit\">"
-			//	  +"<INPUT TYPE=\"reset\" VALUE=\"Reset\">"
-			//	  +"</FORM>";
-			//String cgi = "<html><a href=\"cgi-bin/test.pl\"> Click here to run a CGI program</A></html>";
-			
-			//out.write(cgi.getBytes());
-			//out.close();
+			//output either response from script or error message
+			out.write(cgiResp.getBytes());
+			out.close();
 		}
 	}
 
