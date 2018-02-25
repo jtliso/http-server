@@ -16,6 +16,9 @@ public class WebServer {
 	public boolean threaded;
 	protected HttpServer server;
 	protected InetSocketAddress socket;
+	
+	public Map<String, String> commands;
+	
 
 	public WebServer(String[] args){
 		portNum = Integer.parseInt(args[0]);
@@ -29,6 +32,8 @@ public class WebServer {
 			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threded)");
 			System.exit(1);
 		}
+		
+		
 	}
 
 	//basic handler for root level, prints hello world
@@ -163,35 +168,61 @@ public class WebServer {
 		@Override
 		public void handle(HttpExchange ex) throws IOException{
 			String param = "";
-			String cgiResp; //holds cgi resp. or error msg. 
+			String cgiResp = ""; 			//holds cgi resp. or error msg. 
+			String scriptName = "";
+			String command = "";
+			
+			Map<String, String> commands = new HashMap<String, String>();	//support file types
+			commands.put("php", "php");
+			commands.put("py", "python");
+			commands.put("pl", "perl");
 			
 			//parse GET request
 			RequestParser r = new RequestParser(ex.getRequestHeaders());
 			r.parse();
 			
 			//TO-DO HERE: 
-			// 1) add parsing for running any script in cgi-bin, not just test.php
-			// 2) parse arguments and pass to cgi script in param var.
-			// 3) add functionality for .py, .pl, not just .php
-				
-			//run hard-coded dummy cgi script, put resp. in cgiResp
-			try {
-				String line; 
-				StringBuilder output = new StringBuilder();
-				Process p = Runtime.getRuntime().exec("php " + "cgi-bin/test.php" + " " + param); //3
-				BufferedReader input = 
-					new BufferedReader (
-						new InputStreamReader(p.getInputStream()));
-				
-				while ((line = input.readLine()) != null) {
-					output.append(line);
+			// 1) parse arguments and pass to cgi script in param var.
+			String path = ex.getRequestURI().getPath();
+			cgiResp = "<p>" + path + "</p>";
+
+			//checking that path was provided
+			if (path != null) {
+				String[] slash = path.split("/");
+				//checking that /script was passed
+				if (slash.length == 3) {
+					scriptName = slash[2];
+					//find extension
+					String[] period = scriptName.split("\\.");
+					if (period.length > 1) {
+						command = commands.get(period[period.length-1]);
+					}
 				}
-				input.close();
-				cgiResp = output.toString();
-				
 			}
-			catch (Exception err) {
-				cgiResp = "<p>" + err.toString() + "</p>";
+				
+			//run cgi script, put resp. in cgiResp			
+			if (!scriptName.isEmpty()) {
+				try {
+					String line; 
+					StringBuilder output = new StringBuilder();
+					Process p = Runtime.getRuntime().exec(command + " cgi-bin/" + scriptName + " " + param); 
+					BufferedReader input = 
+						new BufferedReader (
+							new InputStreamReader(p.getInputStream()));
+					
+					while ((line = input.readLine()) != null) {
+						output.append(line);
+					}
+					input.close();
+					cgiResp = output.toString();
+					
+				}
+				catch (Exception err) {
+					cgiResp = "<p>" + err.toString() + "</p>";
+				}
+			}
+			else {
+				cgiResp = "<p>usage: hostname/cgi-bin/script</p>";
 			}
 
 			//send GET response
@@ -258,7 +289,7 @@ public class WebServer {
 			server.createContext("/get", new GetHandler());
 			server.createContext("/file", new FileTransfer());
 			server.createContext("/dir", new DirectoryHandler());
-			server.createContext("/cgi", new CGIHandler());
+			server.createContext("/cgi-bin", new CGIHandler());
 			server.createContext("/post", new PostHandler());
 			
 			//threading the server if specified
