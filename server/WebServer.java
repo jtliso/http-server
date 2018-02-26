@@ -41,11 +41,39 @@ public class WebServer {
 	protected static class BasicHandler implements HttpHandler{
 		@Override
 			public void handle(HttpExchange ex) throws IOException{
-				//String msg = "<h1>Go Vols!</h1>";
-				//msg += "<img src=\"http://i0.kym-cdn.com/photos/images/newsfeed/001/207/210/b22.jpg\">";
 				
-				byte[] encoded = Files.readAllBytes(Paths.get("index.html"));
-				String msg = new String(encoded);
+				String path = (ex.getRequestURI().getPath()).substring(1);
+				String msg = "";
+				try {
+					File f = new File(path);
+					
+					if (f.isFile() && f.canRead()) {
+						String extension = "";
+						int i = path.lastIndexOf('.');
+						if (i > 0) {
+								extension = path.substring(i+1);
+						}
+						
+						
+						if (extension.equals("html")) {
+							msg = new String(Files.readAllBytes(Paths.get(path)));
+							//msg = path;
+						}
+						else {
+							msg = "navigating to non-html file: " + path + " extension: " + extension;
+						}
+					}
+					else if (f.isDirectory()) {
+						msg = new String(Files.readAllBytes(Paths.get(f.getAbsolutePath() + "/index.html")));
+						//msg = f.getAbsolutePath() + "/index.html";
+					}
+					else { //home page
+						msg = new String(Files.readAllBytes(Paths.get("index.html")));
+					}
+				}
+				catch (Exception e) {
+					msg = "404 page not found";
+				}
 				
 				ex.sendResponseHeaders(200, msg.length());
 				OutputStream out = ex.getResponseBody();
