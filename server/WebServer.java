@@ -10,6 +10,7 @@ import java.io.*;
 import com.sun.net.httpserver.*;
 import java.net.*;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class WebServer {
 	public int portNum;
@@ -29,7 +30,7 @@ public class WebServer {
 		else if(args[1].equals("-m"))
 			threaded = true;
 		else{
-			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threded)");
+			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threaded)");
 			System.exit(1);
 		}
 		
@@ -40,8 +41,12 @@ public class WebServer {
 	protected static class BasicHandler implements HttpHandler{
 		@Override
 			public void handle(HttpExchange ex) throws IOException{
-				String msg = "<h1>Go Vols!</h1>";
-				msg += "<img src=\"http://i0.kym-cdn.com/photos/images/newsfeed/001/207/210/b22.jpg\">";
+				//String msg = "<h1>Go Vols!</h1>";
+				//msg += "<img src=\"http://i0.kym-cdn.com/photos/images/newsfeed/001/207/210/b22.jpg\">";
+				
+				byte[] encoded = Files.readAllBytes(Paths.get("index.html"));
+				String msg = new String(encoded);
+				
 				ex.sendResponseHeaders(200, msg.length());
 				OutputStream out = ex.getResponseBody();
 				out.write(msg.getBytes());
@@ -245,7 +250,7 @@ public class WebServer {
 				//parse POST request
 				RequestParser r = new RequestParser(ex.getRequestHeaders());
 				r.parse();
-				String form = "";
+				String form = "<html><head><title>CS560 Programming assigment 1</title><style>html {margin: 0;padding: 0;height: 100%;width: 100%;}body {width: 900px;margin: auto;	background-image: url(\"http://www.misucell.com/data/out/9/IMG_315890.png\");}.container {max-width: 80%;text-align: right;color: rgb(77,77,77);}</style></head><body><div class=\"container\">";
 
 				InputStreamReader in = new InputStreamReader(ex.getRequestBody(), "utf-8");
 				BufferedReader buf = new BufferedReader(in);
@@ -256,16 +261,17 @@ public class WebServer {
 					String[] params = query.split("&");
 
 					String name = params[0].split("=")[1].replace("+", " ");
-					String band = params[1].split("=")[1].replace("+", " ");
+					String comment = params[1].split("=")[1].replace("+", " ");
 
-					BufferedWriter writer = new BufferedWriter(new FileWriter("post_output.txt"));
-					String msg = name + "'s favorite band is " + band;
+					BufferedWriter writer = new BufferedWriter(new FileWriter("post_output.txt", true)); //append to file if already there
+					String msg = name + " | " + comment + "\n";
 					form += msg;
 					writer.write(msg);
 					writer.close();
 				}
 
-				form += "<form method=\"post\">First name:<br><input type=\"text\" name=\"firstname\"><br> Favorite Band:<br><input type=\"text\" name=\"bandname\"><br><br><input type=\"submit\" value=\"Submit\"></form>";
+				form += "<form method=\"post\">Name:<br><input type=\"text\" name=\"firstname\"><br> Comment:<br><input type=\"text\" name=\"bandname\"><br><br><input type=\"submit\" value=\"Submit\"></form>";
+				form += "</div></body></html>";
 				
 				ex.getResponseHeaders().add("Content-type", "text/html");
 				ex.sendResponseHeaders(200, 0);
