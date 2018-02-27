@@ -342,7 +342,7 @@ public class WebServer {
 
 	public static void main(String[] args){
 		if(args.length < 2){
-			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threaded)]");
+			System.err.println("USAGE: javac server.WebServer.jar [port number] [-s (single threaded) | -m (multi-threaded)]");
 			return;
 		}
 
