@@ -30,7 +30,7 @@ public class WebServer {
 		else if(args[1].equals("-m"))
 			threaded = true;
 		else{
-			System.err.println("USAGE: java -jar Server.jar [port number] [-s (single threaded) | -m (multi-threaded)");
+			System.err.println("USAGE: java server.Webserver [port number] [-s (single threaded) | -m (multi-threaded)");
 			System.exit(1);
 		}
 		
@@ -342,7 +342,7 @@ public class WebServer {
 
 	public static void main(String[] args){
 		if(args.length < 2){
-			System.err.println("USAGE: javac server.WebServer.jar [port number] [-s (single threaded) | -m (multi-threaded)]");
+			System.err.println("USAGE: java server.WebServer [port number] [-s (single threaded) | -m (multi-threaded)]");
 			return;
 		}
 
